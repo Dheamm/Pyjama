@@ -31,6 +31,11 @@ public final class PyjamaCore {
         logger.info("Pyjama disabled.");
     }
 
+    public void reload() {
+        configService.reload();
+        localeService.reload(configService.getLocale());
+    }
+
     public ConfigService getConfigService() {
         return configService;
     }

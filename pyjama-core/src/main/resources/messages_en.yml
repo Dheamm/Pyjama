@@ -2,3 +2,6 @@ messages-version: 1
 
 command:
   hello: "Hello Pyjama"
+  usage: "<red>Usage: /<label> <hello|reload></red>"
+  no-permission: "<red>You don't have permission to do that.</red>"
+  reload-success: "<green>Pyjama configuration reloaded.</green>"
