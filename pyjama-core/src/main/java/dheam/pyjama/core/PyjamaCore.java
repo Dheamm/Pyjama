@@ -1,20 +1,23 @@
 package dheam.pyjama.core;
 
+import dheam.pyjama.api.platform.PlatformBridge;
 import dheam.pyjama.core.service.config.ConfigService;
 import dheam.pyjama.core.service.locale.LocaleService;
 
-import java.io.File;
+import java.nio.file.Path;
 import java.util.logging.Logger;
 
 public final class PyjamaCore {
 
-    private final File dataFolder;
+    private final Path dataFolder;
+    private final PlatformBridge platformBridge;
     private final Logger logger;
     private ConfigService configService;
     private LocaleService localeService;
 
-    public PyjamaCore(File dataFolder, Logger logger) {
+    public PyjamaCore(Path dataFolder, PlatformBridge platformBridge, Logger logger) {
         this.dataFolder = dataFolder;
+        this.platformBridge = platformBridge;
         this.logger = logger;
     }
 
@@ -34,5 +37,9 @@ public final class PyjamaCore {
 
     public LocaleService getLocaleService() {
         return localeService;
+    }
+
+    public PlatformBridge getPlatformBridge() {
+        return platformBridge;
     }
 }

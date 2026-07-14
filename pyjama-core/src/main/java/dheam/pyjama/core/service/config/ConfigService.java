@@ -3,12 +3,12 @@ package dheam.pyjama.core.service.config;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,13 +22,13 @@ public final class ConfigService {
     private static final List<String> DEFAULT_COMMAND_ALIASES = List.of("pj");
     private static final String DEFAULT_LOCALE = "en";
 
-    private final File file;
+    private final Path file;
     private final Logger logger;
     private final Yaml yaml;
     private Map<String, Object> config;
 
-    public ConfigService(File dataFolder, Logger logger) {
-        this.file = new File(dataFolder, FILE_NAME);
+    public ConfigService(Path dataFolder, Logger logger) {
+        this.file = dataFolder.resolve(FILE_NAME);
         this.logger = logger;
         this.yaml = createYaml();
         load();
@@ -62,7 +62,7 @@ public final class ConfigService {
 
     private void load() {
         ensureFileExists();
-        config = readYaml(file);
+        config = readYaml();
 
         Map<String, Object> defaults = readDefaultResource();
         if (mergeDefaults(config, defaults)) {
@@ -71,25 +71,27 @@ public final class ConfigService {
     }
 
     private void ensureFileExists() {
-        if (file.exists()) {
+        if (Files.exists(file)) {
             return;
         }
-        File parent = file.getParentFile();
-        if (parent != null && !parent.exists()) {
-            parent.mkdirs();
-        }
-        try (InputStream stream = openDefaultResourceStream()) {
-            if (stream == null) {
-                return;
+        try {
+            Path parent = file.getParent();
+            if (parent != null && !Files.exists(parent)) {
+                Files.createDirectories(parent);
             }
-            Files.copy(stream, file.toPath());
+            try (InputStream stream = openDefaultResourceStream()) {
+                if (stream == null) {
+                    return;
+                }
+                Files.copy(stream, file);
+            }
         } catch (IOException exception) {
             logger.warning("Failed to create default " + FILE_NAME + ": " + exception.getMessage());
         }
     }
 
-    private Map<String, Object> readYaml(File source) {
-        try (InputStream stream = new FileInputStream(source)) {
+    private Map<String, Object> readYaml() {
+        try (InputStream stream = Files.newInputStream(file)) {
             Map<String, Object> loaded = yaml.load(stream);
             return loaded != null ? loaded : new LinkedHashMap<>();
         } catch (Exception exception) {
@@ -132,8 +134,8 @@ public final class ConfigService {
     }
 
     private void save() {
-        try (FileOutputStream stream = new FileOutputStream(file)) {
-            yaml.dump(config, new java.io.OutputStreamWriter(stream));
+        try (Writer writer = Files.newBufferedWriter(file, StandardCharsets.UTF_8)) {
+            yaml.dump(config, writer);
         } catch (IOException exception) {
             logger.warning("Failed to save " + FILE_NAME + ": " + exception.getMessage());
         }

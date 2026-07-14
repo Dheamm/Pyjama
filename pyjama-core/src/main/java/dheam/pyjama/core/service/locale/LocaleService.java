@@ -6,12 +6,12 @@ import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,7 +23,7 @@ public final class LocaleService {
     private static final List<String> SUPPORTED_LOCALES = List.of("en", "es");
     private static final String MISSING_KEY_FORMAT = "<red>Missing message: %s</red>";
 
-    private final File dataFolder;
+    private final Path dataFolder;
     private final Logger logger;
     private final Yaml yaml;
     private final MiniMessage miniMessage;
@@ -31,7 +31,7 @@ public final class LocaleService {
     private String locale;
     private Map<String, Object> messages;
 
-    public LocaleService(File dataFolder, Logger logger, String requestedLocale) {
+    public LocaleService(Path dataFolder, Logger logger, String requestedLocale) {
         this.dataFolder = dataFolder;
         this.logger = logger;
         this.yaml = createYaml();
@@ -69,7 +69,7 @@ public final class LocaleService {
         this.locale = normalizeLocale(requestedLocale);
         this.messages = new LinkedHashMap<>();
 
-        File file = fileFor(locale);
+        Path file = fileFor(locale);
         ensureFileExists(file, locale);
         messages = readYaml(file, locale);
 
@@ -94,8 +94,8 @@ public final class LocaleService {
         return requestedLocale;
     }
 
-    private File fileFor(String targetLocale) {
-        return new File(dataFolder, fileNameFor(targetLocale));
+    private Path fileFor(String targetLocale) {
+        return dataFolder.resolve(fileNameFor(targetLocale));
     }
 
     private String fileNameFor(String targetLocale) {
@@ -108,26 +108,28 @@ public final class LocaleService {
         return new Yaml(options);
     }
 
-    private void ensureFileExists(File file, String targetLocale) {
-        if (file.exists()) {
+    private void ensureFileExists(Path file, String targetLocale) {
+        if (Files.exists(file)) {
             return;
         }
-        File parent = file.getParentFile();
-        if (parent != null && !parent.exists()) {
-            parent.mkdirs();
-        }
-        try (InputStream stream = openResourceStream(targetLocale)) {
-            if (stream == null) {
-                return;
+        try {
+            Path parent = file.getParent();
+            if (parent != null && !Files.exists(parent)) {
+                Files.createDirectories(parent);
             }
-            Files.copy(stream, file.toPath());
+            try (InputStream stream = openResourceStream(targetLocale)) {
+                if (stream == null) {
+                    return;
+                }
+                Files.copy(stream, file);
+            }
         } catch (IOException exception) {
             logger.warning("Failed to create default " + fileNameFor(targetLocale) + ": " + exception.getMessage());
         }
     }
 
-    private Map<String, Object> readYaml(File source, String targetLocale) {
-        try (InputStream stream = new FileInputStream(source)) {
+    private Map<String, Object> readYaml(Path source, String targetLocale) {
+        try (InputStream stream = Files.newInputStream(source)) {
             Map<String, Object> loaded = yaml.load(stream);
             return loaded != null ? loaded : new LinkedHashMap<>();
         } catch (Exception exception) {
@@ -169,11 +171,11 @@ public final class LocaleService {
         return changed;
     }
 
-    private void save(File file) {
-        try (FileOutputStream stream = new FileOutputStream(file)) {
-            yaml.dump(messages, new java.io.OutputStreamWriter(stream));
+    private void save(Path file) {
+        try (Writer writer = Files.newBufferedWriter(file, StandardCharsets.UTF_8)) {
+            yaml.dump(messages, writer);
         } catch (IOException exception) {
-            logger.warning("Failed to save " + file.getName() + ": " + exception.getMessage());
+            logger.warning("Failed to save " + file.getFileName() + ": " + exception.getMessage());
         }
     }
 
