@@ -18,8 +18,8 @@ tasks.processResources {
 }
 
 tasks.shadowJar {
+    archiveBaseName.set("pyjama")
     archiveClassifier.set("")
-    relocate("org.yaml.snakeyaml", "dheam.pyjama.libs.snakeyaml")
 }
 
 tasks.jar {
