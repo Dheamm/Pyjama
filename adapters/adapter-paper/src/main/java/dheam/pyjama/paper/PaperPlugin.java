@@ -15,13 +15,7 @@ public final class PaperPlugin extends JavaPlugin {
         PaperPlatformBridge platformBridge = new PaperPlatformBridge(this);
         core = new PyjamaCore(getDataFolder().toPath(), platformBridge, getLogger());
         core.enable();
-
-        pyjamaCommand = new PyjamaCommand(
-                core.getConfigService().getCommandName(),
-                core.getConfigService().getCommandAliases(),
-                core
-        );
-        CommandRegistrar.register(this, pyjamaCommand);
+        registerCommand();
     }
 
     @Override
@@ -36,5 +30,20 @@ public final class PaperPlugin extends JavaPlugin {
 
     public PyjamaCore getCore() {
         return core;
+    }
+
+    private void registerCommand() {
+        pyjamaCommand = new PyjamaCommand(
+                core.getConfigService().getCommandName(),
+                core.getConfigService().getCommandAliases(),
+                core,
+                this::rebindCommand
+        );
+        CommandRegistrar.register(this, pyjamaCommand);
+    }
+
+    private void rebindCommand() {
+        CommandRegistrar.unregister(this, pyjamaCommand);
+        registerCommand();
     }
 }

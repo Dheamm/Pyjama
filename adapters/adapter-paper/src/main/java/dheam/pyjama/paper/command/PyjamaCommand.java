@@ -15,11 +15,13 @@ public final class PyjamaCommand extends Command {
     private static final List<String> SUBCOMMANDS = List.of("hello", "reload");
 
     private final PyjamaCore core;
+    private final Runnable postReloadHook;
 
-    public PyjamaCommand(String name, List<String> aliases, PyjamaCore core) {
+    public PyjamaCommand(String name, List<String> aliases, PyjamaCore core, Runnable postReloadHook) {
         super(name);
         setAliases(aliases);
         this.core = core;
+        this.postReloadHook = postReloadHook;
     }
 
     @Override
@@ -68,6 +70,9 @@ public final class PyjamaCommand extends Command {
         }
         core.reload();
         sender.sendMessage(core.getLocaleService().getMessage("command.reload-success"));
+        if (postReloadHook != null) {
+            postReloadHook.run();
+        }
     }
 
     private void sendUsage(CommandSender sender, String commandLabel) {
