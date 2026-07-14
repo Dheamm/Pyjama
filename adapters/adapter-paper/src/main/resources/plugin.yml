@@ -5,3 +5,14 @@ api-version: '26.1'
 folia-supported: true
 author: dheam
 description: Pyjama plugin.
+
+permissions:
+  pyjama.*:
+    description: Grants access to all Pyjama commands.
+    children:
+      pyjama.command.hello: true
+      pyjama.command.reload: true
+  pyjama.command.hello:
+    description: Allows using the hello command.
+  pyjama.command.reload:
+    description: Allows reloading Pyjama configuration.
