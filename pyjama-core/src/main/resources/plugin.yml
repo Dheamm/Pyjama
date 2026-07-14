@@ -1,0 +1,7 @@
+name: Pyjama
+main: dheam.pyjama.core.PyjamaCore
+version: ${version}
+api-version: '26.1'
+folia-supported: true
+author: dheam
+description: Pyjama plugin core.
