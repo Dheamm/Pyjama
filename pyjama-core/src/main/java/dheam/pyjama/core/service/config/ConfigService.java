@@ -20,6 +20,7 @@ public final class ConfigService {
     private static final int CURRENT_CONFIG_VERSION = 1;
     private static final String DEFAULT_COMMAND_NAME = "pyjama";
     private static final List<String> DEFAULT_COMMAND_ALIASES = List.of("pj");
+    private static final String DEFAULT_LOCALE = "en";
 
     private final File file;
     private final Logger logger;
@@ -47,6 +48,10 @@ public final class ConfigService {
 
     public List<String> getCommandAliases() {
         return getStringListSafe("command.aliases", DEFAULT_COMMAND_ALIASES);
+    }
+
+    public String getLocale() {
+        return getStringSafe("locale", DEFAULT_LOCALE);
     }
 
     private Yaml createYaml() {
