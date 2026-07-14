@@ -1,21 +1,28 @@
 package dheam.pyjama.core;
 
 import dheam.pyjama.core.service.config.ConfigService;
-import org.bukkit.plugin.java.JavaPlugin;
 
-public final class PyjamaCore extends JavaPlugin {
+import java.io.File;
+import java.util.logging.Logger;
 
+public final class PyjamaCore {
+
+    private final File dataFolder;
+    private final Logger logger;
     private ConfigService configService;
 
-    @Override
-    public void onEnable() {
-        configService = new ConfigService(this);
-        getLogger().info("Pyjama enabled.");
+    public PyjamaCore(File dataFolder, Logger logger) {
+        this.dataFolder = dataFolder;
+        this.logger = logger;
     }
 
-    @Override
-    public void onDisable() {
-        getLogger().info("Pyjama disabled.");
+    public void enable() {
+        configService = new ConfigService(dataFolder, logger);
+        logger.info("Pyjama enabled.");
+    }
+
+    public void disable() {
+        logger.info("Pyjama disabled.");
     }
 
     public ConfigService getConfigService() {
