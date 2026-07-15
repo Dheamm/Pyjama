@@ -9,6 +9,7 @@ import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,7 +18,6 @@ import java.util.logging.Logger;
 public final class ConfigService {
 
     private static final String FILE_NAME = "config.yml";
-    private static final int CURRENT_CONFIG_VERSION = 1;
     private static final String DEFAULT_COMMAND_NAME = "pyjama";
     private static final List<String> DEFAULT_COMMAND_ALIASES = List.of("pj");
     private static final String DEFAULT_LOCALE = "en";
@@ -39,7 +39,7 @@ public final class ConfigService {
     }
 
     public int getConfigVersion() {
-        return getIntSafe("config-version", CURRENT_CONFIG_VERSION);
+        return getIntSafe("config-version", ConfigMigration.CURRENT_VERSION);
     }
 
     public String getCommandName() {
@@ -65,7 +65,10 @@ public final class ConfigService {
         config = readYaml();
 
         Map<String, Object> defaults = readDefaultResource();
-        if (mergeDefaults(config, defaults)) {
+        boolean changed = mergeDefaults(config, defaults);
+        changed |= ConfigMigration.migrate(config, logger);
+
+        if (changed) {
             save();
         }
     }
@@ -155,8 +158,8 @@ public final class ConfigService {
 
     private int getIntSafe(String path, int fallback) {
         Object value = resolve(path);
-        if (value instanceof Integer) {
-            return (Integer) value;
+        if (value instanceof Integer integer) {
+            return integer;
         }
         warnIfInvalidType(path, value, fallback);
         return fallback;
@@ -164,21 +167,34 @@ public final class ConfigService {
 
     private String getStringSafe(String path, String fallback) {
         Object value = resolve(path);
-        if (value instanceof String) {
-            return (String) value;
+        if (value instanceof String string) {
+            return string;
         }
         warnIfInvalidType(path, value, fallback);
         return fallback;
     }
 
-    @SuppressWarnings("unchecked")
     private List<String> getStringListSafe(String path, List<String> fallback) {
         Object value = resolve(path);
-        if (value instanceof List<?>) {
-            return (List<String>) value;
+        if (!(value instanceof List<?> rawList)) {
+            warnIfInvalidType(path, value, fallback);
+            return fallback;
         }
-        warnIfInvalidType(path, value, fallback);
-        return fallback;
+
+        List<String> result = new ArrayList<>();
+        for (Object element : rawList) {
+            if (element instanceof String string) {
+                result.add(string);
+            } else if (element != null) {
+                logger.warning("Config value at '" + path + "' contains a non-string entry, ignoring it.");
+            }
+        }
+
+        if (result.isEmpty()) {
+            warnIfInvalidType(path, value, fallback);
+            return fallback;
+        }
+        return result;
     }
 
     private void warnIfInvalidType(String path, Object value, Object fallback) {
