@@ -1,7 +1,6 @@
 package dheam.pyjama.paper;
 
 import dheam.pyjama.core.PyjamaCore;
-import dheam.pyjama.core.service.permission.Permissions;
 import dheam.pyjama.paper.command.CommandRegistrar;
 import dheam.pyjama.paper.command.PyjamaCommand;
 import org.bukkit.entity.Player;
