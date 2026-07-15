@@ -6,6 +6,9 @@ folia-supported: true
 author: dheam
 description: Pyjama plugin.
 
+softdepend:
+  - MiniPlaceholders
+
 permissions:
   pyjama.*:
     description: Grants access to all Pyjama commands.

@@ -1,5 +1,7 @@
 messages-version: 1
 
+prefix: "<gradient:#4da6ff:#ffffff>[Pyjama]</gradient> "
+
 command:
   hello: "Hola Pyjama"
   usage: "<red>Uso: /<label> <hello|reload></red>"

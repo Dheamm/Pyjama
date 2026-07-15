@@ -1,5 +1,6 @@
 package dheam.pyjama.core.service.locale;
 
+import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
@@ -13,7 +14,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -21,6 +21,8 @@ public final class LocaleService {
 
     private static final String DEFAULT_LOCALE = "en";
     private static final String MISSING_KEY_FORMAT = "<red>Missing message: %s</red>";
+    private static final String PREFIX_KEY = "prefix";
+    private static final boolean MINIPLACEHOLDERS_AVAILABLE = detectMiniPlaceholders();
 
     private final Path dataFolder;
     private final Logger logger;
@@ -29,6 +31,7 @@ public final class LocaleService {
 
     private String locale;
     private Map<String, Object> messages;
+    private String prefix;
 
     public LocaleService(Path dataFolder, Logger logger, String requestedLocale) {
         this.dataFolder = dataFolder;
@@ -47,21 +50,50 @@ public final class LocaleService {
     }
 
     public Component getMessage(String key) {
-        return getMessage(key, TagResolver.empty());
+        return getMessage(null, key, TagResolver.empty());
     }
 
     public Component getMessage(String key, TagResolver... placeholders) {
-        String raw = getRaw(key);
-        return miniMessage.deserialize(raw, placeholders);
+        return getMessage(null, key, placeholders);
+    }
+
+    public Component getMessage(Audience audience, String key, TagResolver... placeholders) {
+        return render(audience, getRaw(key), true, placeholders);
+    }
+
+    public Component getRawMessage(String key) {
+        return getRawMessage(null, key, TagResolver.empty());
+    }
+
+    public Component getRawMessage(String key, TagResolver... placeholders) {
+        return getRawMessage(null, key, placeholders);
+    }
+
+    public Component getRawMessage(Audience audience, String key, TagResolver... placeholders) {
+        return render(audience, getRaw(key), false, placeholders);
     }
 
     public String getRaw(String key) {
         Object value = resolve(key);
-        if (value instanceof String) {
-            return (String) value;
+        if (value instanceof String string) {
+            return string;
         }
         logger.warning("Missing message key '" + key + "' for locale '" + locale + "'");
         return String.format(MISSING_KEY_FORMAT, key);
+    }
+
+    private Component render(Audience audience, String raw, boolean applyPrefix, TagResolver... placeholders) {
+        String text = applyPrefix ? prefix + raw : raw;
+        TagResolver resolver = TagResolver.resolver(placeholders);
+        if (MINIPLACEHOLDERS_AVAILABLE) {
+            TagResolver miniPlaceholdersResolver = audience != null
+                    ? MiniPlaceholdersBridge.audiencePlaceholders()
+                    : MiniPlaceholdersBridge.globalPlaceholders();
+            resolver = TagResolver.resolver(resolver, miniPlaceholdersResolver);
+        }
+        return audience != null
+                ? miniMessage.deserialize(text, audience, resolver)
+                : miniMessage.deserialize(text, resolver);
     }
 
     private void load(String requestedLocale) {
@@ -76,6 +108,19 @@ public final class LocaleService {
             Map<String, Object> englishDefaults = readDefaultResource(DEFAULT_LOCALE);
             mergeDefaults(messages, englishDefaults);
         }
+
+        this.prefix = readPrefix();
+    }
+
+    private String readPrefix() {
+        Object value = resolve(PREFIX_KEY);
+        if (value instanceof String string) {
+            return string;
+        }
+        if (value != null) {
+            logger.warning("Config value at '" + PREFIX_KEY + "' has an invalid type, using empty prefix");
+        }
+        return "";
     }
 
     private String normalizeLocale(String requestedLocale) {
@@ -182,5 +227,14 @@ public final class LocaleService {
             current = ((Map<String, Object>) current).get(part);
         }
         return current;
+    }
+
+    private static boolean detectMiniPlaceholders() {
+        try {
+            Class.forName("io.github.miniplaceholders.api.MiniPlaceholders");
+            return true;
+        } catch (ClassNotFoundException exception) {
+            return false;
+        }
     }
 }

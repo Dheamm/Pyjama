@@ -60,7 +60,7 @@ public final class PyjamaCommand extends Command {
             sendNoPermission(sender);
             return;
         }
-        sender.sendMessage(core.getLocaleService().getMessage("command.hello"));
+        sender.sendMessage(core.getLocaleService().getMessage(sender, "command.hello"));
     }
 
     private void handleReload(CommandSender sender) {
@@ -69,7 +69,7 @@ public final class PyjamaCommand extends Command {
             return;
         }
         core.reload();
-        sender.sendMessage(core.getLocaleService().getMessage("command.reload-success"));
+        sender.sendMessage(core.getLocaleService().getMessage(sender, "command.reload-success"));
         if (postReloadHook != null) {
             postReloadHook.run();
         }
@@ -77,13 +77,14 @@ public final class PyjamaCommand extends Command {
 
     private void sendUsage(CommandSender sender, String commandLabel) {
         sender.sendMessage(core.getLocaleService().getMessage(
+                sender,
                 "command.usage",
                 Placeholder.unparsed("label", commandLabel)
         ));
     }
 
     private void sendNoPermission(CommandSender sender) {
-        sender.sendMessage(core.getLocaleService().getMessage("command.no-permission"));
+        sender.sendMessage(core.getLocaleService().getMessage(sender, "command.no-permission"));
     }
 
     private boolean hasPermissionFor(CommandSender sender, String subcommand) {
