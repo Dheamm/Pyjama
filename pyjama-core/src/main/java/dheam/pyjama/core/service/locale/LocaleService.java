@@ -20,7 +20,6 @@ import java.util.logging.Logger;
 public final class LocaleService {
 
     private static final String DEFAULT_LOCALE = "en";
-    private static final List<String> SUPPORTED_LOCALES = List.of("en", "es");
     private static final String MISSING_KEY_FORMAT = "<red>Missing message: %s</red>";
 
     private final Path dataFolder;
@@ -73,11 +72,6 @@ public final class LocaleService {
         ensureFileExists(file, locale);
         messages = readYaml(file, locale);
 
-        Map<String, Object> defaults = readDefaultResource(locale);
-        if (mergeDefaults(messages, defaults)) {
-            save(file);
-        }
-
         if (!locale.equals(DEFAULT_LOCALE)) {
             Map<String, Object> englishDefaults = readDefaultResource(DEFAULT_LOCALE);
             mergeDefaults(messages, englishDefaults);
@@ -85,10 +79,7 @@ public final class LocaleService {
     }
 
     private String normalizeLocale(String requestedLocale) {
-        if (requestedLocale == null || !SUPPORTED_LOCALES.contains(requestedLocale)) {
-            if (requestedLocale != null) {
-                logger.warning("Unsupported locale '" + requestedLocale + "', falling back to '" + DEFAULT_LOCALE + "'");
-            }
+        if (requestedLocale == null || requestedLocale.isBlank()) {
             return DEFAULT_LOCALE;
         }
         return requestedLocale;
@@ -112,29 +103,31 @@ public final class LocaleService {
         if (Files.exists(file)) {
             return;
         }
-        try {
+        try (InputStream stream = openResourceStream(targetLocale)) {
+            if (stream == null) {
+                return;
+            }
             Path parent = file.getParent();
             if (parent != null && !Files.exists(parent)) {
                 Files.createDirectories(parent);
             }
-            try (InputStream stream = openResourceStream(targetLocale)) {
-                if (stream == null) {
-                    return;
-                }
-                Files.copy(stream, file);
-            }
+            Files.copy(stream, file);
         } catch (IOException exception) {
             logger.warning("Failed to create default " + fileNameFor(targetLocale) + ": " + exception.getMessage());
         }
     }
 
     private Map<String, Object> readYaml(Path source, String targetLocale) {
+        if (!Files.exists(source)) {
+            logger.warning("Locale file '" + fileNameFor(targetLocale) + "' not found, using English defaults for missing keys.");
+            return new LinkedHashMap<>();
+        }
         try (InputStream stream = Files.newInputStream(source)) {
             Map<String, Object> loaded = yaml.load(stream);
             return loaded != null ? loaded : new LinkedHashMap<>();
         } catch (Exception exception) {
             logger.warning("Failed to read " + fileNameFor(targetLocale) + ", falling back to defaults: " + exception.getMessage());
-            return readDefaultResource(targetLocale);
+            return new LinkedHashMap<>();
         }
     }
 
