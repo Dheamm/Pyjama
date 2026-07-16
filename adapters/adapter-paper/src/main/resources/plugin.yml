@@ -13,9 +13,9 @@ permissions:
   pyjama.*:
     description: Grants access to all Pyjama commands.
     children:
-      pyjama.command.hello: true
+      pyjama.command.info: true
       pyjama.command.reload: true
-  pyjama.command.hello:
-    description: Allows using the hello command.
+  pyjama.command.info:
+    description: Allows using the /pyjama command to view plugin info.
   pyjama.command.reload:
     description: Allows reloading Pyjama configuration.

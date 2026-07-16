@@ -9,16 +9,21 @@ dependencies {
     compileOnly("io.papermc.paper:paper-api:26.1.2.build.+")
 }
 
+val platformId = "paper"
+
 tasks.processResources {
-    val props = mapOf("version" to project.version)
+    val props = mapOf(
+        "version" to project.version,
+        "platformId" to platformId
+    )
     inputs.properties(props)
-    filesMatching("plugin.yml") {
+    filesMatching(listOf("plugin.yml", "pyjama-platform.properties")) {
         expand(props)
     }
 }
 
 tasks.shadowJar {
-    archiveBaseName.set("pyjama")
+    archiveBaseName.set("${rootProject.name}-$platformId")
     archiveClassifier.set("")
 }
 

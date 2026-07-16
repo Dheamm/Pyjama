@@ -3,7 +3,6 @@ messages-version: 1
 prefix: "<gradient:#4da6ff:#ffffff>[Pyjama]</gradient> "
 
 command:
-  hello: "Hello Pyjama"
-  usage: "<red>Usage: /<label> <hello|reload></red>"
   no-permission: "<red>You don't have permission to do that.</red>"
   reload-success: "<green>Pyjama configuration reloaded.</green>"
+  info: "Running <#55ffff><version></#55ffff>.\nUse <#55ff55>/pj help</#55ff55> to view more info."

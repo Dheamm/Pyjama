@@ -3,6 +3,7 @@ package dheam.pyjama.core;
 import dheam.pyjama.api.platform.PlatformBridge;
 import dheam.pyjama.core.service.config.ConfigService;
 import dheam.pyjama.core.service.locale.LocaleService;
+import dheam.pyjama.core.service.version.VersionService;
 
 import java.nio.file.Path;
 import java.util.logging.Logger;
@@ -14,6 +15,7 @@ public final class PyjamaCore {
     private final Logger logger;
     private ConfigService configService;
     private LocaleService localeService;
+    private VersionService versionService;
 
     public PyjamaCore(Path dataFolder, PlatformBridge platformBridge, Logger logger) {
         this.dataFolder = dataFolder;
@@ -24,6 +26,7 @@ public final class PyjamaCore {
     public void enable() {
         configService = new ConfigService(dataFolder, logger);
         localeService = new LocaleService(dataFolder, logger, configService.getLocale());
+        versionService = new VersionService(logger);
         logger.info("Pyjama enabled.");
     }
 
@@ -46,5 +49,9 @@ public final class PyjamaCore {
 
     public PlatformBridge getPlatformBridge() {
         return platformBridge;
+    }
+
+    public String getBuildName() {
+        return versionService.getBuildName(platformBridge.platformId());
     }
 }

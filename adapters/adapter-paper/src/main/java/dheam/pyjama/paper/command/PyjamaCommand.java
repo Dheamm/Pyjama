@@ -12,7 +12,7 @@ import java.util.Locale;
 
 public final class PyjamaCommand extends Command {
 
-    private static final List<String> SUBCOMMANDS = List.of("hello", "reload");
+    private static final List<String> SUBCOMMANDS = List.of("reload");
 
     private final PyjamaCore core;
     private final Runnable postReloadHook;
@@ -27,14 +27,13 @@ public final class PyjamaCommand extends Command {
     @Override
     public boolean execute(CommandSender sender, String commandLabel, String[] args) {
         if (args.length == 0) {
-            sendUsage(sender, commandLabel);
+            handleInfo(sender);
             return true;
         }
 
         switch (args[0].toLowerCase(Locale.ROOT)) {
-            case "hello" -> handleHello(sender);
             case "reload" -> handleReload(sender);
-            default -> sendUsage(sender, commandLabel);
+            default -> handleInfo(sender);
         }
         return true;
     }
@@ -55,12 +54,16 @@ public final class PyjamaCommand extends Command {
         return completions;
     }
 
-    private void handleHello(CommandSender sender) {
-        if (!sender.hasPermission(Permissions.COMMAND_HELLO)) {
+    private void handleInfo(CommandSender sender) {
+        if (!sender.hasPermission(Permissions.COMMAND_INFO)) {
             sendNoPermission(sender);
             return;
         }
-        sender.sendMessage(core.getLocaleService().getMessage(sender, "command.hello"));
+        sender.sendMessage(core.getLocaleService().getMessage(
+                sender,
+                "command.info",
+                Placeholder.unparsed("version", core.getBuildName())
+        ));
     }
 
     private void handleReload(CommandSender sender) {
@@ -75,21 +78,12 @@ public final class PyjamaCommand extends Command {
         }
     }
 
-    private void sendUsage(CommandSender sender, String commandLabel) {
-        sender.sendMessage(core.getLocaleService().getMessage(
-                sender,
-                "command.usage",
-                Placeholder.unparsed("label", commandLabel)
-        ));
-    }
-
     private void sendNoPermission(CommandSender sender) {
         sender.sendMessage(core.getLocaleService().getMessage(sender, "command.no-permission"));
     }
 
     private boolean hasPermissionFor(CommandSender sender, String subcommand) {
         return switch (subcommand) {
-            case "hello" -> sender.hasPermission(Permissions.COMMAND_HELLO);
             case "reload" -> sender.hasPermission(Permissions.COMMAND_RELOAD);
             default -> false;
         };
