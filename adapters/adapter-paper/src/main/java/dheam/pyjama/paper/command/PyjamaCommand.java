@@ -2,7 +2,6 @@ package dheam.pyjama.paper.command;
 
 import dheam.pyjama.core.PyjamaCore;
 import dheam.pyjama.core.service.permission.Permissions;
-import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 
@@ -59,11 +58,7 @@ public final class PyjamaCommand extends Command {
             sendNoPermission(sender);
             return;
         }
-        sender.sendMessage(core.getLocaleService().getMessage(
-                sender,
-                "command.info",
-                Placeholder.unparsed("version", core.getBuildName())
-        ));
+        sender.sendMessage(core.getLocaleService().getMessage(sender, "command.info"));
     }
 
     private void handleReload(CommandSender sender) {

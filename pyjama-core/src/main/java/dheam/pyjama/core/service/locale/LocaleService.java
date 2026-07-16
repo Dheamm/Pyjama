@@ -3,6 +3,7 @@ package dheam.pyjama.core.service.locale;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
@@ -15,6 +16,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
 public final class LocaleService {
@@ -32,6 +35,8 @@ public final class LocaleService {
     private String locale;
     private Map<String, Object> messages;
     private String prefix;
+    private final Map<String, String> globalPlaceholders = new ConcurrentHashMap<>();
+    private final AtomicReference<TagResolver> globalResolver = new AtomicReference<>(TagResolver.empty());
 
     public LocaleService(Path dataFolder, Logger logger, String requestedLocale) {
         this.dataFolder = dataFolder;
@@ -43,6 +48,26 @@ public final class LocaleService {
 
     public void reload(String requestedLocale) {
         load(requestedLocale);
+    }
+
+    public void setGlobalPlaceholder(String key, String value) {
+        String normalized = value == null ? "" : value;
+        if (normalized.equals(globalPlaceholders.get(key))) {
+            return;
+        }
+        globalPlaceholders.put(key, normalized);
+        rebuildGlobalResolver();
+    }
+
+    public void setGlobalPlaceholders(Map<String, String> values) {
+        Map<String, String> normalized = new LinkedHashMap<>();
+        values.forEach((key, value) -> normalized.put(key, value == null ? "" : value));
+        if (normalized.equals(globalPlaceholders)) {
+            return;
+        }
+        globalPlaceholders.clear();
+        globalPlaceholders.putAll(normalized);
+        rebuildGlobalResolver();
     }
 
     public String getLocale() {
@@ -84,7 +109,7 @@ public final class LocaleService {
 
     private Component render(Audience audience, String raw, boolean applyPrefix, TagResolver... placeholders) {
         String text = applyPrefix ? prefix + raw : raw;
-        TagResolver resolver = TagResolver.resolver(placeholders);
+        TagResolver resolver = TagResolver.resolver(TagResolver.resolver(placeholders), globalResolver.get());
         if (MINIPLACEHOLDERS_AVAILABLE) {
             TagResolver miniPlaceholdersResolver = audience != null
                     ? MiniPlaceholdersBridge.audiencePlaceholders()
@@ -94,6 +119,12 @@ public final class LocaleService {
         return audience != null
                 ? miniMessage.deserialize(text, audience, resolver)
                 : miniMessage.deserialize(text, resolver);
+    }
+
+    private void rebuildGlobalResolver() {
+        TagResolver.Builder builder = TagResolver.builder();
+        globalPlaceholders.forEach((key, value) -> builder.resolver(Placeholder.unparsed(key, value)));
+        globalResolver.set(builder.build());
     }
 
     private void load(String requestedLocale) {

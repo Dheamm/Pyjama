@@ -6,6 +6,7 @@ import dheam.pyjama.core.service.locale.LocaleService;
 import dheam.pyjama.core.service.version.VersionService;
 
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.logging.Logger;
 
 public final class PyjamaCore {
@@ -16,6 +17,7 @@ public final class PyjamaCore {
     private ConfigService configService;
     private LocaleService localeService;
     private VersionService versionService;
+    private String buildName;
 
     public PyjamaCore(Path dataFolder, PlatformBridge platformBridge, Logger logger) {
         this.dataFolder = dataFolder;
@@ -27,6 +29,8 @@ public final class PyjamaCore {
         configService = new ConfigService(dataFolder, logger);
         localeService = new LocaleService(dataFolder, logger, configService.getLocale());
         versionService = new VersionService(logger);
+        buildName = versionService.getBuildName(platformBridge.platformId());
+        registerGlobalPlaceholders();
         logger.info("Pyjama enabled.");
     }
 
@@ -37,6 +41,14 @@ public final class PyjamaCore {
     public void reload() {
         configService.reload();
         localeService.reload(configService.getLocale());
+        registerGlobalPlaceholders();
+    }
+
+    private void registerGlobalPlaceholders() {
+        localeService.setGlobalPlaceholders(Map.of(
+                "command_name", configService.getCommandName(),
+                "version", buildName
+        ));
     }
 
     public ConfigService getConfigService() {
@@ -52,6 +64,6 @@ public final class PyjamaCore {
     }
 
     public String getBuildName() {
-        return versionService.getBuildName(platformBridge.platformId());
+        return buildName;
     }
 }
