@@ -9,14 +9,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-public final class PyjamaCommand extends Command {
+public final class RootCommand extends Command {
 
     private static final List<String> SUBCOMMANDS = List.of("reload");
 
     private final PyjamaCore core;
     private final Runnable postReloadHook;
 
-    public PyjamaCommand(String name, List<String> aliases, PyjamaCore core, Runnable postReloadHook) {
+    public RootCommand(String name, List<String> aliases, PyjamaCore core, Runnable postReloadHook) {
         super(name);
         setAliases(aliases);
         this.core = core;

@@ -2,14 +2,14 @@ package dheam.pyjama.paper;
 
 import dheam.pyjama.core.PyjamaCore;
 import dheam.pyjama.paper.command.CommandRegistrar;
-import dheam.pyjama.paper.command.PyjamaCommand;
+import dheam.pyjama.paper.command.RootCommand;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public final class PaperPlugin extends JavaPlugin {
 
     private PyjamaCore core;
-    private PyjamaCommand pyjamaCommand;
+    private RootCommand rootCommand;
 
     @Override
     public void onEnable() {
@@ -21,8 +21,8 @@ public final class PaperPlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        if (pyjamaCommand != null) {
-            CommandRegistrar.unregister(this, pyjamaCommand);
+        if (rootCommand != null) {
+            CommandRegistrar.unregister(this, rootCommand);
         }
         if (core != null) {
             core.disable();
@@ -34,17 +34,17 @@ public final class PaperPlugin extends JavaPlugin {
     }
 
     private void registerCommand() {
-        pyjamaCommand = new PyjamaCommand(
+        rootCommand = new RootCommand(
                 core.getConfigService().getCommandName(),
                 core.getConfigService().getCommandAliases(),
                 core,
                 this::rebindCommand
         );
-        CommandRegistrar.register(this, pyjamaCommand);
+        CommandRegistrar.register(this, rootCommand);
     }
 
     private void rebindCommand() {
-        CommandRegistrar.unregister(this, pyjamaCommand);
+        CommandRegistrar.unregister(this, rootCommand);
         registerCommand();
         getServer().getOnlinePlayers().stream()
                 .filter(this::hasAnyPyjamaPermission)
