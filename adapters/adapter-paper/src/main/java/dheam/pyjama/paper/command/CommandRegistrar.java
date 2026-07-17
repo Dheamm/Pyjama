@@ -1,24 +1,18 @@
 package dheam.pyjama.paper.command;
 
-import org.bukkit.Bukkit;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandMap;
-import org.bukkit.plugin.Plugin;
+import com.mojang.brigadier.tree.LiteralCommandNode;
+import io.papermc.paper.command.brigadier.CommandSourceStack;
+import io.papermc.paper.command.brigadier.Commands;
 
-import java.util.Locale;
+import java.util.List;
 
 public final class CommandRegistrar {
 
     private CommandRegistrar() {
     }
 
-    public static void register(Plugin plugin, Command command) {
-        CommandMap commandMap = Bukkit.getCommandMap();
-        commandMap.register(plugin.getName().toLowerCase(Locale.ROOT), command);
-    }
-
-    public static void unregister(Plugin plugin, Command command) {
-        CommandMap commandMap = Bukkit.getCommandMap();
-        commandMap.getKnownCommands().values().removeIf(registered -> registered == command);
+    public static void register(Commands commands, LiteralCommandNode<CommandSourceStack> node,
+                                String description, List<String> aliases) {
+        commands.register(node, description, aliases);
     }
 }
