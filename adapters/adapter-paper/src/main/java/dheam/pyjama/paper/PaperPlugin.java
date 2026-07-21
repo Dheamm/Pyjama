@@ -2,9 +2,9 @@ package dheam.pyjama.paper;
 
 import dheam.pyjama.api.command.CommandTreeRebinder;
 import dheam.pyjama.core.PyjamaCore;
-import dheam.pyjama.paper.command.CommandRegistrar;
-import dheam.pyjama.paper.command.PaperCommandTreeRebinder;
 import dheam.pyjama.paper.command.RootCommandNode;
+import dheam.pyjama.paper.command.support.CommandRegistrar;
+import dheam.pyjama.paper.command.support.PaperCommandTreeRebinder;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import org.bukkit.plugin.java.JavaPlugin;
