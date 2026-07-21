@@ -2,7 +2,7 @@ package dheam.pyjama.paper;
 
 import dheam.pyjama.api.command.CommandTreeRebinder;
 import dheam.pyjama.core.PyjamaCore;
-import dheam.pyjama.paper.command.RootCommandNode;
+import dheam.pyjama.paper.command.PaperCommandTree;
 import dheam.pyjama.paper.command.support.CommandRegistrar;
 import dheam.pyjama.paper.command.support.PaperCommandTreeRebinder;
 import io.papermc.paper.command.brigadier.Commands;
@@ -31,7 +31,7 @@ public final class PaperPlugin extends JavaPlugin {
 
             CommandRegistrar.register(
                     commandsRegistrar,
-                    RootCommandNode.build(registeredCommandName, core, this::rebindCommand),
+                    PaperCommandTree.build(registeredCommandName, core.getCommandHandlers(), this::rebindCommand),
                     "Pyjama main command.",
                     registeredAliases
             );
@@ -39,7 +39,7 @@ public final class PaperPlugin extends JavaPlugin {
             commandTreeRebinder = new PaperCommandTreeRebinder(
                     this,
                     commandsRegistrar.getDispatcher(),
-                    name -> RootCommandNode.build(name, core, this::rebindCommand)
+                    name -> PaperCommandTree.build(name, core.getCommandHandlers(), this::rebindCommand)
             );
         });
     }
