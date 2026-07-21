@@ -4,7 +4,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.tree.CommandNode;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import com.mojang.brigadier.tree.RootCommandNode;
-import dheam.pyjama.api.platform.command.CommandTreeRebinder;
+import dheam.pyjama.api.command.CommandTreeRebinder;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import org.bukkit.Bukkit;

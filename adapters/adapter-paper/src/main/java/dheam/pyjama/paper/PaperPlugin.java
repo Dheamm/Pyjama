@@ -1,6 +1,6 @@
 package dheam.pyjama.paper;
 
-import dheam.pyjama.api.platform.command.CommandTreeRebinder;
+import dheam.pyjama.api.command.CommandTreeRebinder;
 import dheam.pyjama.core.PyjamaCore;
 import dheam.pyjama.paper.command.CommandRegistrar;
 import dheam.pyjama.paper.command.PaperCommandTreeRebinder;

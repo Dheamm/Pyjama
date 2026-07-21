@@ -1,4 +1,4 @@
-package dheam.pyjama.api.platform.command;
+package dheam.pyjama.api.command;
 
 import java.util.List;
 
