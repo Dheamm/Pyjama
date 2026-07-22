@@ -1,5 +1,7 @@
 package dheam.pyjama.core.service.placeholder;
 
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.tag.Tag;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 
@@ -36,10 +38,15 @@ public final class PlaceholderService {
     }
 
     public TagResolver resolverFor(String namespace) {
-        TagResolver.Builder builder = TagResolver.builder().resolver(globalResolver());
-        local.getOrDefault(namespace, Map.of())
-                .forEach((key, value) -> builder.resolver(Placeholder.unparsed(namespace + ":" + key, value.get())));
-        return builder.build();
+        return TagResolver.resolver(globalResolver(), namespaceResolver(namespace));
+    }
+
+    private TagResolver namespaceResolver(String namespace) {
+        return TagResolver.resolver(namespace, (argumentQueue, context) -> {
+            String key = argumentQueue.popOr("placeholder key required").value();
+            Supplier<String> value = local.getOrDefault(namespace, Map.of()).get(key);
+            return Tag.inserting(Component.text(value != null ? value.get() : ""));
+        });
     }
 
     private TagResolver build(Map<String, Supplier<String>> source) {

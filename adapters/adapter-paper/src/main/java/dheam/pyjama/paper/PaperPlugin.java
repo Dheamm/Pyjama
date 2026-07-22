@@ -1,10 +1,12 @@
 package dheam.pyjama.paper;
 
 import dheam.pyjama.api.command.CommandTreeRebinder;
+import dheam.pyjama.api.placeholder.PlaceholderBridge;
 import dheam.pyjama.core.PyjamaCore;
 import dheam.pyjama.paper.command.PaperCommandTree;
 import dheam.pyjama.paper.command.support.CommandRegistrar;
 import dheam.pyjama.paper.command.support.PaperCommandTreeRebinder;
+import dheam.pyjama.paper.placeholder.PaperPlaceholderBridge;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -21,7 +23,8 @@ public final class PaperPlugin extends JavaPlugin {
     @Override
     public void onEnable() {
         PaperPlatformBridge platformBridge = new PaperPlatformBridge(this);
-        core = new PyjamaCore(getDataFolder().toPath(), platformBridge, getLogger());
+        PlaceholderBridge placeholderBridge = PaperPlaceholderBridge.createIfAvailable();
+        core = new PyjamaCore(getDataFolder().toPath(), platformBridge, placeholderBridge, getLogger());
         core.enable();
 
         getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> {

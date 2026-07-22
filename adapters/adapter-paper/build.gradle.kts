@@ -7,6 +7,7 @@ dependencies {
     implementation(project(":pyjama-api"))
     implementation(project(":pyjama-core"))
     compileOnly("io.papermc.paper:paper-api:26.1.2.build.+")
+    compileOnly("io.github.miniplaceholders:miniplaceholders-api:3.2.0")
 }
 
 val platformId = "paper"

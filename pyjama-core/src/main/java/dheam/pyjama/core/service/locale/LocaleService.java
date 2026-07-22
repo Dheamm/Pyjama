@@ -1,9 +1,10 @@
 package dheam.pyjama.core.service.locale;
 
+import dheam.pyjama.api.placeholder.PlaceholderBridge;
+import dheam.pyjama.core.service.placeholder.PlaceholderService;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
-import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
@@ -16,33 +17,34 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
 public final class LocaleService {
 
     private static final String DEFAULT_LOCALE = "en";
+    private static final String GLOBAL_NAMESPACE = "global";
     private static final String MISSING_KEY_FORMAT = "<red>Missing message: %s</red>";
     private static final String PREFIX_KEY = "prefix";
-    private static final boolean MINIPLACEHOLDERS_AVAILABLE = detectMiniPlaceholders();
 
     private final Path dataFolder;
     private final Logger logger;
     private final Yaml yaml;
     private final MiniMessage miniMessage;
+    private final PlaceholderService placeholderService;
+    private final PlaceholderBridge placeholderBridge;
 
     private String locale;
     private Map<String, Object> messages;
     private String prefix;
-    private final Map<String, String> globalPlaceholders = new ConcurrentHashMap<>();
-    private final AtomicReference<TagResolver> globalResolver = new AtomicReference<>(TagResolver.empty());
 
-    public LocaleService(Path dataFolder, Logger logger, String requestedLocale) {
+    public LocaleService(Path dataFolder, Logger logger, String requestedLocale,
+                         PlaceholderService placeholderService, PlaceholderBridge placeholderBridge) {
         this.dataFolder = dataFolder;
         this.logger = logger;
         this.yaml = createYaml();
         this.miniMessage = MiniMessage.miniMessage();
+        this.placeholderService = placeholderService;
+        this.placeholderBridge = placeholderBridge;
         load(requestedLocale);
     }
 
@@ -50,52 +52,40 @@ public final class LocaleService {
         load(requestedLocale);
     }
 
-    public void setGlobalPlaceholder(String key, String value) {
-        String normalized = value == null ? "" : value;
-        if (normalized.equals(globalPlaceholders.get(key))) {
-            return;
-        }
-        globalPlaceholders.put(key, normalized);
-        rebuildGlobalResolver();
-    }
-
-    public void setGlobalPlaceholders(Map<String, String> values) {
-        Map<String, String> normalized = new LinkedHashMap<>();
-        values.forEach((key, value) -> normalized.put(key, value == null ? "" : value));
-        if (normalized.equals(globalPlaceholders)) {
-            return;
-        }
-        globalPlaceholders.clear();
-        globalPlaceholders.putAll(normalized);
-        rebuildGlobalResolver();
-    }
-
     public String getLocale() {
         return locale;
     }
 
     public Component getMessage(String key) {
-        return getMessage(null, key, TagResolver.empty());
+        return getMessage(null, GLOBAL_NAMESPACE, key, TagResolver.empty());
     }
 
     public Component getMessage(String key, TagResolver... placeholders) {
-        return getMessage(null, key, placeholders);
+        return getMessage(null, GLOBAL_NAMESPACE, key, placeholders);
     }
 
-    public Component getMessage(Audience audience, String key, TagResolver... placeholders) {
-        return render(audience, getRaw(key), true, placeholders);
+    public Component getMessage(String namespace, String key, TagResolver... placeholders) {
+        return getMessage(null, namespace, key, placeholders);
+    }
+
+    public Component getMessage(Audience audience, String namespace, String key, TagResolver... placeholders) {
+        return render(audience, namespace, getRaw(key), true, placeholders);
     }
 
     public Component getRawMessage(String key) {
-        return getRawMessage(null, key, TagResolver.empty());
+        return getRawMessage(null, GLOBAL_NAMESPACE, key, TagResolver.empty());
     }
 
     public Component getRawMessage(String key, TagResolver... placeholders) {
-        return getRawMessage(null, key, placeholders);
+        return getRawMessage(null, GLOBAL_NAMESPACE, key, placeholders);
     }
 
-    public Component getRawMessage(Audience audience, String key, TagResolver... placeholders) {
-        return render(audience, getRaw(key), false, placeholders);
+    public Component getRawMessage(String namespace, String key, TagResolver... placeholders) {
+        return getRawMessage(null, namespace, key, placeholders);
+    }
+
+    public Component getRawMessage(Audience audience, String namespace, String key, TagResolver... placeholders) {
+        return render(audience, namespace, getRaw(key), false, placeholders);
     }
 
     public String getRaw(String key) {
@@ -107,24 +97,18 @@ public final class LocaleService {
         return String.format(MISSING_KEY_FORMAT, key);
     }
 
-    private Component render(Audience audience, String raw, boolean applyPrefix, TagResolver... placeholders) {
+    private Component render(Audience audience, String namespace, String raw, boolean applyPrefix, TagResolver... placeholders) {
         String text = applyPrefix ? prefix + raw : raw;
-        TagResolver resolver = TagResolver.resolver(TagResolver.resolver(placeholders), globalResolver.get());
-        if (MINIPLACEHOLDERS_AVAILABLE) {
-            TagResolver miniPlaceholdersResolver = audience != null
-                    ? MiniPlaceholdersBridge.audiencePlaceholders()
-                    : MiniPlaceholdersBridge.globalPlaceholders();
-            resolver = TagResolver.resolver(resolver, miniPlaceholdersResolver);
+        TagResolver resolver = TagResolver.resolver(TagResolver.resolver(placeholders), placeholderService.resolverFor(namespace));
+        if (placeholderBridge != null) {
+            TagResolver bridgeResolver = audience != null
+                    ? placeholderBridge.audiencePlaceholders(audience)
+                    : placeholderBridge.globalPlaceholders();
+            resolver = TagResolver.resolver(resolver, bridgeResolver);
         }
         return audience != null
                 ? miniMessage.deserialize(text, audience, resolver)
                 : miniMessage.deserialize(text, resolver);
-    }
-
-    private void rebuildGlobalResolver() {
-        TagResolver.Builder builder = TagResolver.builder();
-        globalPlaceholders.forEach((key, value) -> builder.resolver(Placeholder.unparsed(key, value)));
-        globalResolver.set(builder.build());
     }
 
     private void load(String requestedLocale) {
@@ -258,14 +242,5 @@ public final class LocaleService {
             current = ((Map<String, Object>) current).get(part);
         }
         return current;
-    }
-
-    private static boolean detectMiniPlaceholders() {
-        try {
-            Class.forName("io.github.miniplaceholders.api.MiniPlaceholders");
-            return true;
-        } catch (ClassNotFoundException exception) {
-            return false;
-        }
     }
 }
