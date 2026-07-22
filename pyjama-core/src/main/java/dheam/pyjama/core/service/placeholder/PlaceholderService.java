@@ -2,7 +2,6 @@ package dheam.pyjama.core.service.placeholder;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.tag.Tag;
-import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 
 import java.util.Map;
@@ -51,7 +50,7 @@ public final class PlaceholderService {
 
     private TagResolver build(Map<String, Supplier<String>> source) {
         TagResolver.Builder builder = TagResolver.builder();
-        source.forEach((key, value) -> builder.resolver(Placeholder.unparsed(key, value.get())));
+        source.forEach((key, value) -> builder.tag(key, (argumentQueue, context) -> Tag.inserting(Component.text(value.get()))));
         return builder.build();
     }
 }
